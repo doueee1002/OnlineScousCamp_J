@@ -270,7 +270,7 @@ export default function App() {
     const currentlyPinnedCount = courses.filter(c => c.isPinned).length;
     
     if (!course.isPinned && currentlyPinnedCount >= 3) {
-      return alert('最多只能置頂 3 個活動！請先取消其他置頂項目。');
+      return alert('置頂活動已滿！最多只能置頂 3 個活動，請先取消其他置頂項目。');
     }
 
     try {
@@ -771,11 +771,32 @@ export default function App() {
                   <div><label className="block text-gray-700 font-bold mb-1.5">結束時間 *</label><input type="datetime-local" required value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" /></div>
                   <div className="sm:col-span-2"><label className="block text-gray-700 font-bold mb-1.5">上課地點 *</label><input type="text" required value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" /></div>
                   <div className="sm:col-span-2"><label className="block text-gray-700 font-bold mb-1.5">內容簡介 *</label><textarea required rows={4} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none leading-relaxed" /></div>
+                  
                   <div className="sm:col-span-2 border-t border-gray-100 pt-4 mt-2">
-                     <label className="block text-gray-500 font-bold mb-1.5 text-xs uppercase">進階連結 (選填)</label>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <input type="text" value={formData.registrationLink} onChange={(e) => setFormData({...formData, registrationLink: e.target.value})} placeholder="報名表單網址 (https://...)" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
-                        <input type="text" value={formData.eventLink} onChange={(e) => setFormData({...formData, eventLink: e.target.value})} placeholder="活動詳細網站 (https://...)" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                     <label className="block text-gray-500 font-bold mb-1.5 text-xs uppercase">進階資訊與連結 (選填)</label>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-gray-700 font-bold mb-1.5">報名表單網址</label>
+                          <input type="text" value={formData.registrationLink} onChange={(e) => setFormData({...formData, registrationLink: e.target.value})} placeholder="https://..." className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-bold mb-1.5">活動詳細網站</label>
+                          <input type="text" value={formData.eventLink} onChange={(e) => setFormData({...formData, eventLink: e.target.value})} placeholder="https://..." className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-gray-700 font-bold mb-1.5">開辦人數限制</label>
+                          <input type="number" value={formData.capacity} onChange={(e) => setFormData({...formData, capacity: e.target.value})} placeholder="如: 30" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-bold mb-1.5">聯絡 Line ID</label>
+                          <input type="text" value={formData.contactLine} onChange={(e) => setFormData({...formData, contactLine: e.target.value})} placeholder="例如: @camp_line" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-bold mb-1.5">聯絡手機</label>
+                          <input type="text" value={formData.contactPhone} onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} placeholder="例如: 0912-345-678" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        </div>
                      </div>
                   </div>
                 </div>
