@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, CalendarPlus, User, Clock, Edit, Trash2, Plus, Calendar, ChevronRight, X, Search, Filter, Lock, LogOut, Settings, UserPlus, Shield, Loader2, Download, Upload, Link as LinkIcon, Users, Phone, MessageCircle, Tent, Compass, TreePine, Flame, Map as MapIcon, History, Globe } from 'lucide-react';
+import { MapPin, CalendarPlus, User, Clock, Edit, Trash2, Plus, Calendar, ChevronRight, X, Search, Filter, Lock, LogOut, Settings, UserPlus, Shield, Loader2, Download, Upload, Link as LinkIcon, Users, Phone, MessageCircle, Tent, Compass, TreePine, Flame, Map as MapIcon, History, Globe, Pin } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -57,13 +57,20 @@ const formatDisplayTime = (start, end) => {
 const CourseCard = ({ course }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden hover:shadow-md hover:border-[#5A2E8A]/30 transition-all flex flex-col group h-full">
+    <div className={`bg-white rounded-2xl shadow-sm border ${course.isPinned ? 'border-orange-300 ring-1 ring-orange-100 shadow-orange-100/50' : 'border-purple-100'} overflow-hidden hover:shadow-md hover:border-[#5A2E8A]/30 transition-all flex flex-col group h-full`}>
       <div className="p-5 sm:p-6 flex-grow relative">
-        <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-          <h3 className="text-lg sm:text-xl font-bold text-[#5A2E8A] pr-2 transition-colors leading-tight">{course.title}</h3>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-[#5A2E8A] shrink-0 border border-purple-200">
-            {course.category}
-          </span>
+        <div className="flex justify-between items-start mb-2 cursor-pointer gap-2" onClick={() => setIsExpanded(!isExpanded)}>
+          <h3 className="text-lg sm:text-xl font-bold text-[#5A2E8A] transition-colors leading-tight">{course.title}</h3>
+          <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
+            {course.isPinned && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-orange-100 text-orange-600 border border-orange-200">
+                <Pin className="h-3 w-3 mr-0.5" fill="currentColor" /> 置頂
+              </span>
+            )}
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-[#5A2E8A] border border-purple-200">
+              {course.category}
+            </span>
+          </div>
         </div>
         <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">{course.description}</p>
         <button onClick={() => setIsExpanded(!isExpanded)} className="text-[#5A2E8A] text-sm font-bold hover:text-[#401b69] flex items-center transition-colors focus:outline-none bg-purple-50 px-3 py-2 rounded-lg w-full justify-center active:scale-95">
@@ -75,6 +82,13 @@ const CourseCard = ({ course }) => {
             <div className="flex items-center"><User className="h-4 w-4 mr-2 shrink-0 text-[#5A2E8A]/60" /><span className="font-medium text-gray-700">講師：{course.instructor}</span></div>
             <div className="flex items-start"><Clock className="h-4 w-4 mr-2 shrink-0 text-[#5A2E8A]/60 mt-0.5" /><span>{formatDisplayTime(course.startTime, course.endTime)}</span></div>
             <div className="flex items-start"><MapPin className="h-4 w-4 mr-2 shrink-0 text-[#5A2E8A]/60 mt-0.5" /><a href={getGoogleMapsLink(course.location)} target="_blank" rel="noopener noreferrer" className="text-[#5A2E8A] hover:text-[#401b69] hover:underline inline-flex items-center font-medium break-all">{course.location} <ChevronRight className="h-3 w-3 ml-0.5 shrink-0" /></a></div>
+            {(course.capacity || course.contactLine || course.contactPhone) && (
+              <div className="mt-2 pt-2 border-t border-purple-100 flex flex-wrap gap-x-4 gap-y-2">
+                {course.capacity && <div className="flex items-center text-[#5A2E8A] text-xs font-bold"><Users className="h-3 w-3 mr-1"/> 限額 {course.capacity} 人</div>}
+                {course.contactPhone && <div className="flex items-center text-gray-500 text-xs"><Phone className="h-3 w-3 mr-1 text-[#5A2E8A]/60"/> {course.contactPhone}</div>}
+                {course.contactLine && <div className="flex items-center text-gray-500 text-xs"><MessageCircle className="h-3 w-3 mr-1 text-[#5A2E8A]/60"/> {course.contactLine}</div>}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -124,6 +138,11 @@ export default function App() {
   const [formData, setFormData] = useState({ title: '', category: '訓練', instructor: '', startTime: '', endTime: '', location: '', description: '', registrationLink: '', eventLink: '', capacity: '', contactLine: '', contactPhone: '' });
   const [customCategory, setCustomCategory] = useState('');
 
+  // 自動同步網頁標題
+  useEffect(() => {
+    document.title = "線上童軍營地公開課程交流資訊平台 V2.2版";
+  }, []);
+
   // --- 操作紀錄 Log 函式 ---
   const logActivity = async (action, details = "") => {
     try {
@@ -153,7 +172,14 @@ export default function App() {
   useEffect(() => {
     if (!authUser) return;
     const unsubCourses = onSnapshot(collection(db, 'courses'), (snapshot) => {
-      setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => new Date(a.startTime) - new Date(b.startTime)));
+      const rawCourses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // 排序邏輯：置頂優先，其次按時間排序
+      const sortedCourses = rawCourses.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return new Date(a.startTime) - new Date(b.startTime);
+      });
+      setCourses(sortedCourses);
       setIsDataLoading(false);
     });
     const unsubCategories = onSnapshot(collection(db, 'categories'), (snapshot) => {
@@ -238,6 +264,23 @@ export default function App() {
     } 
   };
 
+  const handleTogglePin = async (course) => {
+    if (currentAdmin !== 'admin666') return;
+    
+    const currentlyPinnedCount = courses.filter(c => c.isPinned).length;
+    
+    if (!course.isPinned && currentlyPinnedCount >= 3) {
+      return alert('最多只能置頂 3 個活動！請先取消其他置頂項目。');
+    }
+
+    try {
+      await setDoc(doc(db, 'courses', String(course.id)), { isPinned: !course.isPinned }, { merge: true });
+      logActivity(course.isPinned ? "取消置頂" : "置頂活動", `課程: ${course.title}`);
+    } catch (err) {
+      alert('設定置頂失敗');
+    }
+  };
+
   const handleOpenModal = (course = null) => {
     setCustomCategory('');
     if (course) {
@@ -262,7 +305,8 @@ export default function App() {
       const courseToSave = { 
         ...formData, 
         category: finalCategory,
-        createdBy: editingId ? (courses.find(c => c.id === editingId)?.createdBy || currentAdmin) : currentAdmin
+        createdBy: editingId ? (courses.find(c => c.id === editingId)?.createdBy || currentAdmin) : currentAdmin,
+        isPinned: editingId ? (courses.find(c => c.id === editingId)?.isPinned || false) : false
       };
       await setDoc(doc(db, 'courses', String(courseId)), courseToSave);
       logActivity(editingId ? "修改課程" : "新增課程", `課程: ${formData.title}`);
@@ -277,6 +321,131 @@ export default function App() {
         logActivity("刪除課程", `課程: ${course.title}`);
       } catch (err) { alert('刪除失敗'); }
     }
+  };
+
+  // --- CSV 匯入與匯出功能 ---
+  const handleExportCSV = () => {
+    const headers = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactLine', 'contactPhone', 'createdBy'];
+    const csvRows = [];
+    csvRows.push('\uFEFF' + headers.join(',')); // 加上 BOM 防止 Excel 亂碼
+
+    courses.forEach(course => {
+      const row = headers.map(header => {
+        let val = course[header] === undefined || course[header] === null ? '' : String(course[header]);
+        val = val.replace(/"/g, '""'); // 處理字串中的雙引號
+        return `"${val}"`;
+      });
+      csvRows.push(row.join(','));
+    });
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `線上童軍營地_課程匯出_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    logActivity("匯出CSV", `下載了 ${courses.length} 筆資料`);
+  };
+
+  const handleImportCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsProcessingFile(true);
+
+    const processText = async (text) => {
+      try {
+        const rows = [];
+        let currentRow = [];
+        let currentCell = '';
+        let inQuotes = false;
+        
+        // 移除 BOM
+        const startIdx = text.charCodeAt(0) === 0xFEFF ? 1 : 0;
+
+        for (let i = startIdx; i < text.length; i++) {
+          const char = text[i];
+          if (char === '"' && text[i+1] === '"') {
+            currentCell += '"'; i++;
+          } else if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            currentRow.push(currentCell); currentCell = '';
+          } else if (char === '\n' && !inQuotes) {
+            currentRow.push(currentCell); rows.push(currentRow); currentRow = []; currentCell = '';
+          } else if (char !== '\r') {
+            currentCell += char;
+          }
+        }
+        if (currentCell || text[text.length-1] === ',') currentRow.push(currentCell);
+        if (currentRow.length > 0) rows.push(currentRow);
+
+        if (rows.length < 2) throw new Error("檔案沒有資料或格式錯誤");
+
+        const headers = rows[0].map(h => h.trim());
+        const expectedHeaders = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactLine', 'contactPhone'];
+        
+        if (headers[0] !== 'id') throw new Error("檔案格式不符，第一欄必須是 'id'。建議先下載一份資料修改後再上傳。");
+
+        const promises = [];
+        const knownCategories = new Set(categories);
+        
+        for (let i = 1; i < rows.length; i++) {
+          if (rows[i].length === 0 || (rows[i].length === 1 && rows[i][0] === '')) continue; 
+          
+          const courseData = {};
+          headers.forEach((header, index) => {
+            if(expectedHeaders.includes(header)) {
+              courseData[header] = rows[i][index] || '';
+            }
+          });
+
+          if (!courseData.title) continue;
+
+          if (courseData.category && !knownCategories.has(courseData.category)) {
+             const safeCatId = encodeURIComponent(courseData.category).replace(/\./g, '%2E').replace(/\//g, '%2F');
+             promises.push(setDoc(doc(db, 'categories', safeCatId), { name: courseData.category }));
+             knownCategories.add(courseData.category);
+          }
+
+          const courseId = courseData.id || crypto.randomUUID();
+          if(!courseData.id) courseData.id = courseId; 
+
+          const safeCourseId = encodeURIComponent(String(courseId)).replace(/\./g, '%2E').replace(/\//g, '%2F');
+          
+          // 若是透過匯入，強制紀錄建立者為當前管理員
+          courseData.createdBy = currentAdmin || '系統匯入';
+          courseData.isPinned = false; // 匯入預設不置頂
+          
+          promises.push(setDoc(doc(db, 'courses', safeCourseId), courseData));
+        }
+
+        await Promise.all(promises);
+        logActivity("匯入CSV", `成功匯入/更新 ${promises.length} 筆課程`);
+        alert(`成功匯入/更新了 ${promises.length} 筆課程資料！`);
+      } catch (err) {
+        console.error(err);
+        alert('匯入失敗：' + err.message);
+      } finally {
+        setIsProcessingFile(false);
+        if(fileInputRef.current) fileInputRef.current.value = ''; 
+      }
+    };
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      if (text.includes('')) {
+        const readerBig5 = new FileReader();
+        readerBig5.onload = (eBig5) => processText(eBig5.target.result);
+        readerBig5.readAsText(file, 'big5');
+      } else {
+        processText(text);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
   };
 
   const filteredCourses = courses.filter(course => {
@@ -314,11 +483,11 @@ export default function App() {
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto relative z-10">
                 <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5A2E8A]/50" />
-                  <input type="text" placeholder="搜尋..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 border border-purple-200 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] w-full" />
+                  <input type="text" placeholder="搜尋..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 border border-purple-200 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] w-full outline-none" />
                 </div>
                 <div className="relative w-full sm:w-auto">
                   <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5A2E8A]/50" />
-                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="pl-9 pr-8 py-2.5 sm:py-2 border border-purple-200 rounded-lg text-sm appearance-none bg-white w-full">
+                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="pl-9 pr-8 py-2.5 sm:py-2 border border-purple-200 rounded-lg text-sm appearance-none bg-white w-full outline-none focus:ring-2 focus:ring-[#5A2E8A]">
                     <option value="">所有分類</option>
                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
@@ -341,7 +510,6 @@ export default function App() {
 
         {view === 'admin' && (
           <div className="space-y-6 flex-1">
-            {/* 響應式：還原設計圖的「團長後台管理中心」標題與標籤排版 */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-5 gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-[#5A2E8A] flex flex-wrap items-center gap-2 sm:gap-3">
@@ -368,15 +536,22 @@ export default function App() {
                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                   <div className="relative w-full sm:w-auto">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input type="text" placeholder="搜尋管理課程..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2 w-full sm:w-48 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                    <input type="text" placeholder="搜尋管理課程..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 w-full sm:w-48 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
                   </div>
-                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-3 py-2 text-sm w-full sm:w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] bg-white outline-none">
+                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-3 py-2.5 sm:py-2 text-sm w-full sm:w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] bg-white outline-none">
                     <option value="">所有分類</option>
                     {categories.map((cat, idx) => <option key={`admin-filter-${idx}-${cat}`} value={cat}>{cat}</option>)}
                   </select>
                </div>
-               <div className="flex w-full md:w-auto gap-2">
-                  <button onClick={() => handleOpenModal()} className="w-full flex justify-center items-center px-4 py-2 bg-[#5A2E8A] text-white rounded-lg text-sm font-bold shadow-sm hover:bg-[#401b69] transition-colors"><Plus className="h-4 w-4 mr-1" /> 新增課程</button>
+               <div className="flex w-full md:w-auto gap-2 flex-wrap sm:flex-nowrap">
+                  <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImportCSV} className="hidden" />
+                  <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile} className="flex-1 sm:flex-none flex justify-center items-center px-3 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm">
+                    {isProcessingFile ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1 text-blue-600" />} 匯入
+                  </button>
+                  <button onClick={handleExportCSV} className="flex-1 sm:flex-none flex justify-center items-center px-3 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm">
+                    <Download className="h-4 w-4 mr-1 text-green-600" /> 匯出
+                  </button>
+                  <button onClick={() => handleOpenModal()} className="w-full sm:w-auto flex justify-center items-center px-4 py-2.5 sm:py-2 bg-[#5A2E8A] text-white rounded-lg text-sm font-bold shadow-sm hover:bg-[#401b69] transition-colors mt-2 sm:mt-0"><Plus className="h-4 w-4 mr-1" /> 新增課程</button>
                </div>
             </div>
 
@@ -397,7 +572,10 @@ export default function App() {
                     {adminDisplayCourses.map(course => (
                       <tr key={course.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 sm:px-6 py-4 min-w-[200px]">
-                          <div className="font-bold text-gray-900 text-sm sm:text-base leading-tight mb-1">{course.title}</div>
+                          <div className="font-bold text-gray-900 text-sm sm:text-base leading-tight mb-1 flex items-center gap-1.5">
+                            {course.isPinned && <Pin className="h-3.5 w-3.5 text-orange-500 shrink-0" fill="currentColor" />}
+                            {course.title}
+                          </div>
                           <div className="text-xs text-gray-500 flex items-center gap-2">
                              <span className="bg-purple-100 text-[#5A2E8A] px-1.5 py-0.5 rounded">{course.category}</span>
                              <span>{formatDisplayTime(course.startTime, course.endTime).split(' - ')[0]}</span>
@@ -408,10 +586,16 @@ export default function App() {
                         </td>
                         <td className="px-4 sm:px-6 py-4 text-right space-x-2 sm:space-x-4 whitespace-nowrap">
                           {(course.createdBy === currentAdmin || currentAdmin === 'admin666') ? (
-                            <>
+                            <div className="flex justify-end gap-1.5 sm:gap-2">
+                              {currentAdmin === 'admin666' && (
+                                <button onClick={() => handleTogglePin(course)} className={`inline-flex items-center text-sm font-medium px-2 py-1 rounded transition-colors ${course.isPinned ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`} title={course.isPinned ? '取消置頂' : '設為置頂'}>
+                                  <Pin className="h-4 w-4 sm:mr-1" fill={course.isPinned ? 'currentColor' : 'none'} />
+                                  <span className="hidden sm:inline">{course.isPinned ? '取消' : '置頂'}</span>
+                                </button>
+                              )}
                               <button onClick={() => handleOpenModal(course)} className="text-[#5A2E8A] hover:text-[#401b69] inline-flex items-center text-sm font-medium bg-purple-50 px-2 py-1 rounded transition-colors"><Edit className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">編輯</span></button>
                               <button onClick={() => handleDelete(course)} className="text-red-600 hover:text-red-900 inline-flex items-center text-sm font-medium bg-red-50 px-2 py-1 rounded transition-colors"><Trash2 className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">刪除</span></button>
-                            </>
+                            </div>
                           ) : (
                             <span className="text-xs text-gray-400 italic bg-gray-50 px-2 py-1 rounded border border-gray-100">無權限</span>
                           )}
@@ -426,7 +610,6 @@ export default function App() {
         )}
       </main>
 
-      {/* 響應式：還原設計圖帶有帳篷 Logo 的深紫色頁尾 */}
       <footer className="bg-[#2B1143] py-6 sm:py-8 text-center text-purple-200 border-t border-[#1e0a30] mt-auto w-full">
         <div className="flex justify-center items-center gap-2 mb-2 sm:mb-3">
           <Tent className="h-5 w-5 sm:h-6 sm:w-6 text-purple-300" />
