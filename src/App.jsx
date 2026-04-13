@@ -25,6 +25,16 @@ const initialAdmins = [
   { username: 'admin666', password: '123456', isDefault: true }
 ];
 
+// --- 隨機招呼語資料庫 ---
+const randomQuotes = [
+  "尋找感興趣的童軍與公開課程，加入行事曆絕不錯過。",
+  "探索全新技能，與童軍夥伴們一起成長與學習。",
+  "充實週末時光，發掘更多戶外與室內的精彩課程！",
+  "從這裡開始你的學習之旅，為自己裝備更多實用技能。",
+  "掌握第一手營地資訊，讓每一次活動都充滿驚喜。",
+  "點亮學習的熱情，隨時隨地探索專屬你的童軍課程。"
+];
+
 // --- 輔助函式 ---
 const getGoogleCalendarLink = (course) => {
   const formatTime = (timeStr) => timeStr.replace(/[-:]/g, '') + '00';
@@ -299,6 +309,7 @@ export default function App() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [currentQuote, setCurrentQuote] = useState(randomQuotes[0]); // 隨機招呼語狀態
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
@@ -315,9 +326,10 @@ export default function App() {
   const [formData, setFormData] = useState({ title: '', category: '訓練', instructor: '', startTime: '', endTime: '', location: '', description: '', registrationLink: '', eventLink: '', capacity: '', contactName: '', contactLine: '', contactPhone: '' });
   const [customCategory, setCustomCategory] = useState('');
 
-  // 自動同步網頁標題
+  // 自動同步網頁標題與隨機挑選一句招呼語
   useEffect(() => {
     document.title = "線上童軍營地公開課程交流資訊平台 V2.2版";
+    setCurrentQuote(randomQuotes[Math.floor(Math.random() * randomQuotes.length)]);
   }, []);
 
   // --- 操作紀錄 Log 函式 ---
@@ -665,7 +677,9 @@ export default function App() {
               <Compass className="absolute top-2 right-4 h-24 w-24 text-[#5A2E8A] opacity-5 rotate-12 hidden sm:block" />
               <div className="relative z-10">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#5A2E8A] flex items-center"><Flame className="mr-2 text-orange-500 shrink-0 h-6 w-6 sm:h-8 sm:w-8" /> 探索最新課程</h1>
-                <p className="text-[#5A2E8A]/70 mt-1 sm:mt-2 font-medium text-sm sm:text-base">尋找感興趣的童軍與公開課程，加入行事曆絕不錯過。</p>
+                <p className="text-[#5A2E8A]/70 mt-1 sm:mt-2 font-medium text-sm sm:text-base transition-opacity duration-500">
+                  {currentQuote}
+                </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto relative z-10">
                 <div className="relative w-full sm:w-auto">
