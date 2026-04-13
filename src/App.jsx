@@ -36,6 +36,7 @@ const getGoogleCalendarLink = (course) => {
   url.searchParams.append('text', course.title || '');
   url.searchParams.append('dates', `${start}/${end}`);
   let details = `講師: ${course.instructor || '未定'}\n`;
+  if(course.contactName) details += `聯絡人: ${course.contactName}\n`;
   if(course.contactLine) details += `Line聯絡: ${course.contactLine}\n`;
   if(course.contactPhone) details += `聯絡電話: ${course.contactPhone}\n`;
   details += `\n課程介紹:\n${course.description || ''}`;
@@ -77,16 +78,19 @@ const CourseCard = ({ course }) => {
           {isExpanded ? '收起詳細資訊' : '查看詳細資訊'}
           <ChevronRight className={`h-4 w-4 ml-1 transition-transform duration-300 ${isExpanded ? '-rotate-90' : 'rotate-90'}`} />
         </button>
-        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[800px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
           <div className="space-y-3 text-sm text-gray-600 bg-purple-50/50 p-4 rounded-xl border border-purple-100">
             <div className="flex items-center"><User className="h-4 w-4 mr-2 shrink-0 text-[#5A2E8A]/60" /><span className="font-medium text-gray-700">講師：{course.instructor}</span></div>
             <div className="flex items-start"><Clock className="h-4 w-4 mr-2 shrink-0 text-[#5A2E8A]/60 mt-0.5" /><span>{formatDisplayTime(course.startTime, course.endTime)}</span></div>
             <div className="flex items-start"><MapPin className="h-4 w-4 mr-2 shrink-0 text-[#5A2E8A]/60 mt-0.5" /><a href={getGoogleMapsLink(course.location)} target="_blank" rel="noopener noreferrer" className="text-[#5A2E8A] hover:text-[#401b69] hover:underline inline-flex items-center font-medium break-all">{course.location} <ChevronRight className="h-3 w-3 ml-0.5 shrink-0" /></a></div>
-            {(course.capacity || course.contactLine || course.contactPhone) && (
-              <div className="mt-2 pt-2 border-t border-purple-100 flex flex-wrap gap-x-4 gap-y-2">
-                {course.capacity && <div className="flex items-center text-[#5A2E8A] text-xs font-bold"><Users className="h-3 w-3 mr-1"/> 限額 {course.capacity} 人</div>}
-                {course.contactPhone && <div className="flex items-center text-gray-500 text-xs"><Phone className="h-3 w-3 mr-1 text-[#5A2E8A]/60"/> {course.contactPhone}</div>}
-                {course.contactLine && <div className="flex items-center text-gray-500 text-xs"><MessageCircle className="h-3 w-3 mr-1 text-[#5A2E8A]/60"/> {course.contactLine}</div>}
+            
+            {/* 課程附加訊息區塊 */}
+            {(course.capacity || course.contactName || course.contactPhone || course.contactLine) && (
+              <div className="mt-3 pt-3 border-t border-purple-200/60 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {course.capacity && <div className="flex items-center text-[#5A2E8A] text-xs font-bold"><Users className="h-3.5 w-3.5 mr-1.5"/> 報名限額：{course.capacity} 人</div>}
+                {course.contactName && <div className="flex items-center text-gray-700 text-xs font-medium"><User className="h-3.5 w-3.5 mr-1.5 text-[#5A2E8A]/60"/> 聯絡人：{course.contactName}</div>}
+                {course.contactPhone && <div className="flex items-center text-gray-700 text-xs font-medium"><Phone className="h-3.5 w-3.5 mr-1.5 text-[#5A2E8A]/60"/> 手機：{course.contactPhone}</div>}
+                {course.contactLine && <div className="flex items-center text-gray-700 text-xs font-medium"><MessageCircle className="h-3.5 w-3.5 mr-1.5 text-[#5A2E8A]/60"/> LINE：{course.contactLine}</div>}
               </div>
             )}
           </div>
@@ -95,8 +99,8 @@ const CourseCard = ({ course }) => {
       {isExpanded && (
         <div className="p-4 bg-white border-t border-gray-100 space-y-2 mt-auto">
           <div className="flex flex-col sm:flex-row gap-2">
-            {course.registrationLink && <a href={course.registrationLink.startsWith('http') ? course.registrationLink : `https://${course.registrationLink}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-medium text-white bg-[#5A2E8A] hover:bg-[#401b69] transition-colors"><LinkIcon className="h-4 w-4 mr-1" /> 報名連結</a>}
-            {course.eventLink && <a href={course.eventLink.startsWith('http') ? course.eventLink : `https://${course.eventLink}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-medium text-[#5A2E8A] bg-purple-50 hover:bg-purple-100 transition-colors border border-purple-200"><LinkIcon className="h-4 w-4 mr-1" /> 活動網站</a>}
+            {course.registrationLink && <a href={course.registrationLink.startsWith('http') ? course.registrationLink : `https://${course.registrationLink}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-medium text-white bg-[#5A2E8A] hover:bg-[#401b69] transition-colors shadow-sm"><LinkIcon className="h-4 w-4 mr-1" /> 報名連結</a>}
+            {course.eventLink && <a href={course.eventLink.startsWith('http') ? course.eventLink : `https://${course.eventLink}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-medium text-[#5A2E8A] bg-purple-50 hover:bg-purple-100 transition-colors border border-purple-200 shadow-sm"><LinkIcon className="h-4 w-4 mr-1" /> 活動網站</a>}
           </div>
           <a href={getGoogleCalendarLink(course)} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:text-[#5A2E8A] transition-colors"><CalendarPlus className="h-4 w-4 mr-2" /> 加入行事曆</a>
         </div>
@@ -135,7 +139,7 @@ export default function App() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ title: '', category: '訓練', instructor: '', startTime: '', endTime: '', location: '', description: '', registrationLink: '', eventLink: '', capacity: '', contactLine: '', contactPhone: '' });
+  const [formData, setFormData] = useState({ title: '', category: '訓練', instructor: '', startTime: '', endTime: '', location: '', description: '', registrationLink: '', eventLink: '', capacity: '', contactName: '', contactLine: '', contactPhone: '' });
   const [customCategory, setCustomCategory] = useState('');
 
   // 自動同步網頁標題
@@ -285,10 +289,20 @@ export default function App() {
     setCustomCategory('');
     if (course) {
       setEditingId(course.id);
-      setFormData({ title: course.title || '', category: course.category || categories[0] || '其他', instructor: course.instructor || '', startTime: course.startTime || '', endTime: course.endTime || '', location: course.location || '', description: course.description || '', registrationLink: course.registrationLink || '', eventLink: course.eventLink || '', capacity: course.capacity || '', contactLine: course.contactLine || '', contactPhone: course.contactPhone || '' });
+      setFormData({ 
+        title: course.title || '', category: course.category || categories[0] || '其他', 
+        instructor: course.instructor || '', startTime: course.startTime || '', 
+        endTime: course.endTime || '', location: course.location || '', description: course.description || '', 
+        registrationLink: course.registrationLink || '', eventLink: course.eventLink || '', 
+        capacity: course.capacity || '', contactName: course.contactName || '', contactLine: course.contactLine || '', contactPhone: course.contactPhone || '' 
+      });
     } else {
       setEditingId(null);
-      setFormData({ title: '', category: categories[0] || '其他', instructor: '', startTime: '', endTime: '', location: '', description: '', registrationLink: '', eventLink: '', capacity: '', contactLine: '', contactPhone: '' });
+      setFormData({ 
+        title: '', category: categories[0] || '其他', instructor: '', startTime: '', endTime: '', 
+        location: '', description: '', registrationLink: '', eventLink: '', 
+        capacity: '', contactName: '', contactLine: '', contactPhone: '' 
+      });
     }
     setIsModalOpen(true);
   };
@@ -325,7 +339,7 @@ export default function App() {
 
   // --- CSV 匯入與匯出功能 ---
   const handleExportCSV = () => {
-    const headers = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactLine', 'contactPhone', 'createdBy'];
+    const headers = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactName', 'contactLine', 'contactPhone', 'createdBy'];
     const csvRows = [];
     csvRows.push('\uFEFF' + headers.join(',')); // 加上 BOM 防止 Excel 亂碼
 
@@ -385,7 +399,7 @@ export default function App() {
         if (rows.length < 2) throw new Error("檔案沒有資料或格式錯誤");
 
         const headers = rows[0].map(h => h.trim());
-        const expectedHeaders = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactLine', 'contactPhone'];
+        const expectedHeaders = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactName', 'contactLine', 'contactPhone'];
         
         if (headers[0] !== 'id') throw new Error("檔案格式不符，第一欄必須是 'id'。建議先下載一份資料修改後再上傳。");
 
@@ -483,11 +497,11 @@ export default function App() {
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto relative z-10">
                 <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5A2E8A]/50" />
-                  <input type="text" placeholder="搜尋..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 border border-purple-200 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] w-full outline-none" />
+                  <input type="text" placeholder="搜尋..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 bg-white text-gray-900 border border-purple-200 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] w-full outline-none shadow-sm" />
                 </div>
                 <div className="relative w-full sm:w-auto">
                   <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5A2E8A]/50" />
-                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="pl-9 pr-8 py-2.5 sm:py-2 border border-purple-200 rounded-lg text-sm appearance-none bg-white w-full outline-none focus:ring-2 focus:ring-[#5A2E8A]">
+                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="pl-9 pr-8 py-2.5 sm:py-2 bg-white text-gray-900 border border-purple-200 rounded-lg text-sm appearance-none w-full outline-none focus:ring-2 focus:ring-[#5A2E8A] shadow-sm">
                     <option value="">所有分類</option>
                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
@@ -536,9 +550,9 @@ export default function App() {
                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                   <div className="relative w-full sm:w-auto">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input type="text" placeholder="搜尋管理課程..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 w-full sm:w-48 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                    <input type="text" placeholder="搜尋管理課程..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2.5 sm:py-2 w-full sm:w-48 bg-white text-gray-900 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                   </div>
-                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-3 py-2.5 sm:py-2 text-sm w-full sm:w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] bg-white outline-none">
+                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="px-3 py-2.5 sm:py-2 text-sm w-full sm:w-32 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm">
                     <option value="">所有分類</option>
                     {categories.map((cat, idx) => <option key={`admin-filter-${idx}-${cat}`} value={cat}>{cat}</option>)}
                   </select>
@@ -588,13 +602,13 @@ export default function App() {
                           {(course.createdBy === currentAdmin || currentAdmin === 'admin666') ? (
                             <div className="flex justify-end gap-1.5 sm:gap-2">
                               {currentAdmin === 'admin666' && (
-                                <button onClick={() => handleTogglePin(course)} className={`inline-flex items-center text-sm font-medium px-2 py-1 rounded transition-colors ${course.isPinned ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`} title={course.isPinned ? '取消置頂' : '設為置頂'}>
+                                <button onClick={() => handleTogglePin(course)} className={`inline-flex items-center text-sm font-medium px-2 py-1 rounded transition-colors shadow-sm ${course.isPinned ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200' : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200'}`} title={course.isPinned ? '取消置頂' : '設為置頂'}>
                                   <Pin className="h-4 w-4 sm:mr-1" fill={course.isPinned ? 'currentColor' : 'none'} />
                                   <span className="hidden sm:inline">{course.isPinned ? '取消' : '置頂'}</span>
                                 </button>
                               )}
-                              <button onClick={() => handleOpenModal(course)} className="text-[#5A2E8A] hover:text-[#401b69] inline-flex items-center text-sm font-medium bg-purple-50 px-2 py-1 rounded transition-colors"><Edit className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">編輯</span></button>
-                              <button onClick={() => handleDelete(course)} className="text-red-600 hover:text-red-900 inline-flex items-center text-sm font-medium bg-red-50 px-2 py-1 rounded transition-colors"><Trash2 className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">刪除</span></button>
+                              <button onClick={() => handleOpenModal(course)} className="text-[#5A2E8A] hover:text-[#401b69] inline-flex items-center text-sm font-medium bg-purple-50 px-2 py-1 rounded transition-colors shadow-sm border border-purple-200"><Edit className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">編輯</span></button>
+                              <button onClick={() => handleDelete(course)} className="text-red-600 hover:text-red-900 inline-flex items-center text-sm font-medium bg-red-50 px-2 py-1 rounded transition-colors shadow-sm border border-red-200"><Trash2 className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">刪除</span></button>
                             </div>
                           ) : (
                             <span className="text-xs text-gray-400 italic bg-gray-50 px-2 py-1 rounded border border-gray-100">無權限</span>
@@ -629,10 +643,10 @@ export default function App() {
               <h3 className="text-base sm:text-lg font-bold text-blue-900 flex items-center"><History className="mr-2 h-5 w-5" /> 系統操作詳細日誌</h3>
               <button onClick={() => setShowLogModal(false)} className="p-1 hover:bg-white rounded-full transition-colors"><X className="h-5 w-5 text-gray-500" /></button>
             </div>
-            <div className="flex-1 overflow-x-auto overflow-y-auto p-0 sm:p-4">
+            <div className="flex-1 overflow-x-auto overflow-y-auto p-0 sm:p-4 bg-white">
               <table className="min-w-[600px] w-full text-sm">
                 <thead className="bg-gray-50">
-                  <tr className="text-gray-500 border-b">
+                  <tr className="text-gray-500 border-b border-gray-200">
                     <th className="py-3 px-4 text-left font-semibold">時間</th>
                     <th className="py-3 px-4 text-left font-semibold">使用者</th>
                     <th className="py-3 px-4 text-left font-semibold">執行動作</th>
@@ -651,7 +665,7 @@ export default function App() {
                           <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${log.action?.includes('刪除') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                             {log.action || '未知動作'}
                           </span> 
-                          <span className="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[300px]" title={typeof log.details === 'string' ? log.details : ''}>
+                          <span className="text-gray-600 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[300px]" title={typeof log.details === 'string' ? log.details : ''}>
                             {typeof log.details === 'string' ? log.details : ''}
                           </span>
                         </div>
@@ -686,10 +700,10 @@ export default function App() {
                     </div>
                     {editingPasswordFor === admin.username && (
                       <div className="mt-3 p-3 sm:p-4 bg-white rounded-lg border border-purple-100 space-y-3 shadow-inner">
-                        <input type="password" placeholder="請輸入原密碼" value={confirmOldPassword} onChange={(e) => setConfirmOldPassword(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
-                        <input type="password" placeholder="設定新密碼" value={newPasswordValue} onChange={(e) => setNewPasswordValue(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        <input type="password" placeholder="請輸入原密碼" value={confirmOldPassword} onChange={(e) => setConfirmOldPassword(e.target.value)} className="w-full px-3 py-2 bg-white text-gray-900 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        <input type="password" placeholder="設定新密碼" value={newPasswordValue} onChange={(e) => setNewPasswordValue(e.target.value)} className="w-full px-3 py-2 bg-white text-gray-900 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
                         <div className="flex gap-2 justify-end pt-1">
-                          <button onClick={() => setEditingPasswordFor(null)} className="px-4 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium hover:bg-gray-200">取消</button>
+                          <button onClick={() => setEditingPasswordFor(null)} className="px-4 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium hover:bg-gray-200 border border-gray-200">取消</button>
                           <button onClick={() => handleChangePassword(admin.username)} className="px-4 py-1.5 bg-[#5A2E8A] text-white text-xs rounded-lg font-bold hover:bg-[#401b69]">確認修改</button>
                         </div>
                       </div>
@@ -706,8 +720,8 @@ export default function App() {
               <form onSubmit={handleAddAdmin} className="mt-6 bg-purple-50/50 border border-purple-100 p-4 rounded-xl space-y-3">
                 <p className="text-xs font-bold text-[#5A2E8A] flex items-center"><UserPlus className="h-3 w-3 mr-1"/> 新增管理員</p>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <input type="text" required placeholder="帳號" value={newAccountData.username} onChange={(e) => setNewAccountData({...newAccountData, username: e.target.value})} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
-                  <input type="password" required placeholder="初始密碼" value={newAccountData.password} onChange={(e) => setNewAccountData({...newAccountData, password: e.target.value})} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                  <input type="text" required placeholder="帳號" value={newAccountData.username} onChange={(e) => setNewAccountData({...newAccountData, username: e.target.value})} className="flex-1 px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                  <input type="password" required placeholder="初始密碼" value={newAccountData.password} onChange={(e) => setNewAccountData({...newAccountData, password: e.target.value})} className="flex-1 px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
                   <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-[#5A2E8A] text-white rounded-lg text-sm font-bold shadow-sm hover:bg-[#401b69]">新增</button>
                 </div>
               </form>
@@ -726,8 +740,8 @@ export default function App() {
             <h3 className="text-xl font-extrabold mb-6 text-gray-900">團長權限驗證</h3>
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginError && <div className="p-2.5 bg-red-50 border border-red-100 text-red-600 text-sm font-medium rounded-lg">{loginError}</div>}
-              <input type="text" required placeholder="請輸入帳號" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
-              <input type="password" required placeholder="請輸入密碼" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+              <input type="text" required placeholder="請輸入帳號" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
+              <input type="password" required placeholder="請輸入密碼" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
               <button type="submit" className="w-full py-3 bg-[#5A2E8A] text-white rounded-xl font-bold hover:bg-[#401b69] transition-colors shadow-md mt-2">登入系統</button>
             </form>
           </div>
@@ -738,72 +752,80 @@ export default function App() {
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 mt-12 sm:mt-0">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
-            <div className="p-4 sm:p-5 border-b border-gray-100 flex justify-between items-center shrink-0">
+          <div className="relative bg-white rounded-2xl w-full max-w-3xl max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="p-4 sm:p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center shrink-0 rounded-t-2xl">
               <h3 className="text-lg sm:text-xl font-bold text-[#5A2E8A]">{editingId ? '編輯營地課程' : '新增營地課程'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" /></button>
+              <button onClick={() => setIsModalOpen(false)} className="p-1 hover:bg-gray-200 rounded-full transition-colors"><X className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" /></button>
             </div>
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-white">
               <form id="course-form" onSubmit={handleFormSubmit} className="space-y-4 sm:space-y-5 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                   <div className="sm:col-span-2">
                     <label className="block text-gray-700 font-bold mb-1.5">課程名稱 *</label>
-                    <input type="text" required name="title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                    <input type="text" required name="title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1.5">分類 *</label>
-                    <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#5A2E8A] outline-none">
+                    <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm">
                       {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                       <option value="custom_new">+ 新增自訂分類</option>
                     </select>
                   </div>
                   {formData.category === 'custom_new' && (
-                     <div className="sm:col-span-2 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                     <div className="sm:col-span-2 bg-purple-50 p-3 rounded-lg border border-purple-200 shadow-inner">
                         <label className="block text-[#5A2E8A] font-bold mb-1.5">輸入新分類名稱 *</label>
-                        <input type="text" required value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} className="w-full px-4 py-2.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                        <input type="text" required value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-purple-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                      </div>
                   )}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1.5">講師 *</label>
-                    <input type="text" required value={formData.instructor} onChange={(e) => setFormData({...formData, instructor: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                    <input type="text" required value={formData.instructor} onChange={(e) => setFormData({...formData, instructor: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                   </div>
-                  <div><label className="block text-gray-700 font-bold mb-1.5">開始時間 *</label><input type="datetime-local" required value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" /></div>
-                  <div><label className="block text-gray-700 font-bold mb-1.5">結束時間 *</label><input type="datetime-local" required value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" /></div>
-                  <div className="sm:col-span-2"><label className="block text-gray-700 font-bold mb-1.5">上課地點 *</label><input type="text" required value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" /></div>
-                  <div className="sm:col-span-2"><label className="block text-gray-700 font-bold mb-1.5">內容簡介 *</label><textarea required rows={4} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none leading-relaxed" /></div>
+                  <div><label className="block text-gray-700 font-bold mb-1.5">開始時間 *</label><input type="datetime-local" required value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" /></div>
+                  <div><label className="block text-gray-700 font-bold mb-1.5">結束時間 *</label><input type="datetime-local" required value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" /></div>
+                  <div className="sm:col-span-2"><label className="block text-gray-700 font-bold mb-1.5">上課地點 *</label><input type="text" required value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" /></div>
+                  <div className="sm:col-span-2"><label className="block text-gray-700 font-bold mb-1.5">內容簡介 *</label><textarea required rows={4} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none leading-relaxed shadow-sm" /></div>
                   
-                  <div className="sm:col-span-2 border-t border-gray-100 pt-4 mt-2">
-                     <label className="block text-gray-500 font-bold mb-1.5 text-xs uppercase">進階資訊與連結 (選填)</label>
+                  {/* --- 擴充的：課程附加訊息 --- */}
+                  <div className="sm:col-span-2 border-t border-gray-200 pt-5 mt-3">
+                     <label className="block text-[#5A2E8A] font-extrabold mb-3 text-base flex items-center"><LinkIcon className="h-4 w-4 mr-1.5"/> 課程附加訊息 (選填)</label>
+                     
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
-                          <label className="block text-gray-700 font-bold mb-1.5">報名表單網址</label>
-                          <input type="text" value={formData.registrationLink} onChange={(e) => setFormData({...formData, registrationLink: e.target.value})} placeholder="https://..." className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                          <label className="block text-gray-700 font-bold mb-1.5">報名網址</label>
+                          <input type="text" value={formData.registrationLink} onChange={(e) => setFormData({...formData, registrationLink: e.target.value})} placeholder="https://..." className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-bold mb-1.5">活動詳細網站</label>
-                          <input type="text" value={formData.eventLink} onChange={(e) => setFormData({...formData, eventLink: e.target.value})} placeholder="https://..." className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                          <label className="block text-gray-700 font-bold mb-1.5">活動網站</label>
+                          <input type="text" value={formData.eventLink} onChange={(e) => setFormData({...formData, eventLink: e.target.value})} placeholder="https://..." className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                         </div>
                      </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                     
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
                         <div>
-                          <label className="block text-gray-700 font-bold mb-1.5">開辦人數限制</label>
-                          <input type="number" value={formData.capacity} onChange={(e) => setFormData({...formData, capacity: e.target.value})} placeholder="如: 30" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                          <label className="block text-gray-700 font-bold mb-1.5">報名人數</label>
+                          <input type="number" value={formData.capacity} onChange={(e) => setFormData({...formData, capacity: e.target.value})} placeholder="例如: 30" className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-bold mb-1.5">聯絡 Line ID</label>
-                          <input type="text" value={formData.contactLine} onChange={(e) => setFormData({...formData, contactLine: e.target.value})} placeholder="例如: @camp_line" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                          <label className="block text-gray-700 font-bold mb-1.5">開課聯絡人</label>
+                          <input type="text" value={formData.contactName} onChange={(e) => setFormData({...formData, contactName: e.target.value})} placeholder="聯絡人姓名" className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-bold mb-1.5">聯絡手機</label>
-                          <input type="text" value={formData.contactPhone} onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} placeholder="例如: 0912-345-678" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                          <label className="block text-gray-700 font-bold mb-1.5">LINE 聯絡訊息</label>
+                          <input type="text" value={formData.contactLine} onChange={(e) => setFormData({...formData, contactLine: e.target.value})} placeholder="LINE ID 或 網址" className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-bold mb-1.5">手機連絡</label>
+                          <input type="text" value={formData.contactPhone} onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} placeholder="例如: 0912-345-678" className="w-full px-4 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none shadow-sm" />
                         </div>
                      </div>
                   </div>
+                  
                 </div>
               </form>
             </div>
-            <div className="p-4 sm:p-5 border-t border-gray-100 bg-gray-50 flex flex-col-reverse sm:flex-row justify-end gap-3 shrink-0 rounded-b-2xl">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors">取消</button>
+            <div className="p-4 sm:p-5 border-t border-gray-200 bg-gray-50 flex flex-col-reverse sm:flex-row justify-end gap-3 shrink-0 rounded-b-2xl">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-sm">取消</button>
               <button type="submit" form="course-form" className="w-full sm:w-auto px-8 py-2.5 bg-[#5A2E8A] text-white font-bold rounded-lg shadow-md hover:bg-[#401b69] transition-colors">儲存至雲端</button>
             </div>
           </div>
