@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, CalendarPlus, User, Clock, Edit, Trash2, Plus, Calendar, ChevronRight, X, Search, Filter, Lock, LogOut, Settings, UserPlus, Shield, Loader2, Download, Upload, Link as LinkIcon, Users, Phone, MessageCircle, Tent, Compass, TreePine, Flame, Map as MapIcon, History, Globe, Pin } from 'lucide-react';
+import { MapPin, CalendarPlus, User, Clock, Edit, Trash2, Plus, Calendar, ChevronRight, X, Search, Filter, Lock, LogOut, Settings, UserPlus, Shield, Loader2, Download, Upload, Link as LinkIcon, Users, Phone, MessageCircle, Tent, Compass, TreePine, Flame, Map as MapIcon, History, Globe, Pin, Image as ImageIcon } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -57,12 +57,185 @@ const formatDisplayTime = (start, end) => {
 // --- 課程卡片組件 ---
 const CourseCard = ({ course }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportImage = async (e) => {
+    e.stopPropagation();
+    setIsExporting(true);
+    
+    try {
+      // 建立 3:4 比例的 Canvas (900x1200)
+      const canvas = document.createElement('canvas');
+      canvas.width = 900;
+      canvas.height = 1200;
+      const ctx = canvas.getContext('2d');
+
+      // 1. 繪製背景 (白色)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 900, 1200);
+
+      // 2. 繪製頂部紫色區塊
+      ctx.fillStyle = '#5A2E8A';
+      ctx.fillRect(0, 0, 900, 160);
+
+      // 3. 繪製頂部標題文字
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 44px sans-serif';
+      ctx.fillText('🏕️ 線上童軍營地公開課程', 60, 100);
+
+      // 4. 繪製分類標籤 (Pill)
+      const catText = course.category || '其他';
+      ctx.font = 'bold 28px sans-serif';
+      const catWidth = ctx.measureText(catText).width + 40;
+      ctx.fillStyle = '#F3E8FF';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(60, 220, catWidth, 50, 25);
+        ctx.fill();
+      } else {
+        ctx.fillRect(60, 220, catWidth, 50); // Fallback
+      }
+      ctx.fillStyle = '#5A2E8A';
+      ctx.fillText(catText, 80, 255);
+
+      // 文字換行輔助函數
+      const wrapText = (context, text, x, y, maxWidth, lineHeight, maxLines) => {
+        const chars = (text || '').split('');
+        let line = '';
+        let currentY = y;
+        let lineCount = 1;
+        for (let n = 0; n < chars.length; n++) {
+          const testLine = line + chars[n];
+          const metrics = context.measureText(testLine);
+          if (metrics.width > maxWidth && n > 0) {
+            context.fillText(line, x, currentY);
+            line = chars[n];
+            currentY += lineHeight;
+            lineCount++;
+            if (lineCount > maxLines) {
+              context.fillText(line + '...', x, currentY);
+              return currentY;
+            }
+          } else {
+            line = testLine;
+          }
+        }
+        if (lineCount <= maxLines) {
+          context.fillText(line, x, currentY);
+        }
+        return currentY;
+      };
+
+      // 5. 繪製課程標題
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 64px sans-serif';
+      const titleBottomY = wrapText(ctx, course.title, 60, 360, 780, 80, 2);
+
+      // 6. 繪製分隔線
+      const dividerY = titleBottomY + 60;
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(60, dividerY);
+      ctx.lineTo(840, dividerY);
+      ctx.stroke();
+
+      // 7. 繪製詳細資訊
+      ctx.fillStyle = '#4B5563';
+      ctx.font = '36px sans-serif';
+      let infoY = dividerY + 80;
+      const lineSpacing = 65;
+
+      ctx.fillText(`👤 講師：${course.instructor || '未定'}`, 60, infoY);
+      infoY += lineSpacing;
+      ctx.fillText(`⏰ 時間：${formatDisplayTime(course.startTime, course.endTime).split(' - ')[0]}`, 60, infoY);
+      infoY += lineSpacing;
+      
+      let loc = course.location || '未定';
+      if(ctx.measureText(`📍 地點：${loc}`).width > 780) {
+         loc = loc.substring(0, 15) + '...';
+      }
+      ctx.fillText(`📍 地點：${loc}`, 60, infoY);
+      infoY += lineSpacing;
+
+      if (course.capacity) {
+        ctx.fillText(`👥 限額：${course.capacity} 人`, 60, infoY);
+        infoY += lineSpacing;
+      }
+
+      // 8. 繪製簡介 (限制寬度避開 QR Code)
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '30px sans-serif';
+      const descY = infoY + 40;
+      wrapText(ctx, course.description, 60, descY, 580, 45, 4);
+
+      // 9. 繪製自動產生的 QR Code (右下角)
+      try {
+        const qrUrlToEncode = course.registrationLink || window.location.href;
+        const qrImage = new Image();
+        qrImage.crossOrigin = "Anonymous";
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrlToEncode)}&margin=10`;
+
+        await new Promise((resolve) => {
+          qrImage.onload = () => {
+            // QR Code 圖片
+            ctx.drawImage(qrImage, 670, 820, 170, 170);
+            
+            // QR Code 下方說明文字
+            ctx.fillStyle = '#5A2E8A';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(course.registrationLink ? '掃描立即報名' : '查看活動資訊', 755, 1025);
+            resolve();
+          };
+          qrImage.onerror = () => {
+            console.warn('QR Code 產生失敗');
+            resolve(); // 即使 QR Code 失敗也允許輸出圖卡
+          };
+        });
+      } catch (e) {
+        console.warn('QR Code 處理錯誤', e);
+      }
+
+      // 10. 繪製底部紫色區塊與說明
+      ctx.fillStyle = '#5A2E8A';
+      ctx.fillRect(0, 1080, 900, 120);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔍 搜尋「線上童軍營地」查看更多交流資訊', 450, 1150);
+
+      // 11. 觸發圖片下載
+      const link = document.createElement('a');
+      link.download = `課程圖卡_${course.title}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+    } catch (err) {
+      console.error(err);
+      alert('產生圖卡時發生錯誤，請稍後再試！');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border ${course.isPinned ? 'border-orange-300 ring-1 ring-orange-100 shadow-orange-100/50' : 'border-purple-100'} overflow-hidden hover:shadow-md hover:border-[#5A2E8A]/30 transition-all flex flex-col group h-full`}>
+    <div className={`bg-white rounded-2xl shadow-sm border ${course.isPinned ? 'border-orange-300 ring-1 ring-orange-100 shadow-orange-100/50' : 'border-purple-100'} overflow-hidden hover:shadow-md hover:border-[#5A2E8A]/30 transition-all flex flex-col group h-full relative`}>
       <div className="p-5 sm:p-6 flex-grow relative">
         <div className="flex justify-between items-start mb-2 cursor-pointer gap-2" onClick={() => setIsExpanded(!isExpanded)}>
-          <h3 className="text-lg sm:text-xl font-bold text-[#5A2E8A] transition-colors leading-tight">{course.title}</h3>
-          <div className="flex gap-1.5 shrink-0 flex-wrap justify-end">
+          <h3 className="text-lg sm:text-xl font-bold text-[#5A2E8A] transition-colors leading-tight pr-2">{course.title}</h3>
+          <div className="flex gap-1.5 shrink-0 flex-wrap justify-end items-center">
+            
+            {/* 一鍵產生圖卡按鈕 */}
+            <button 
+              onClick={handleExportImage}
+              disabled={isExporting}
+              className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-[#5A2E8A] transition-colors disabled:opacity-50" 
+              title="匯出附有 QR Code 的宣傳圖卡"
+            >
+              {isExporting ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-[#5A2E8A]" /> : <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />}
+            </button>
+
             {course.isPinned && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-orange-100 text-orange-600 border border-orange-200">
                 <Pin className="h-3 w-3 mr-0.5" fill="currentColor" /> 置頂
