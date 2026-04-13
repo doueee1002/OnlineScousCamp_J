@@ -42,7 +42,7 @@ const initialCourses = [
   }
 ];
 
-// --- 輔助函式 (移至外層供獨立組件使用) ---
+// --- 輔助函式 ---
 const getGoogleCalendarLink = (course) => {
   const formatTime = (timeStr) => timeStr.replace(/[-:]/g, '') + '00';
   if(!course.startTime || !course.endTime) return '#';
@@ -81,12 +81,8 @@ const CourseCard = ({ course }) => {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden hover:shadow-md hover:border-[#5A2E8A]/30 transition-all flex flex-col group">
-      {/* 第一層：基本資訊 (始終顯示) */}
       <div className="p-6 flex-grow relative">
-        <div 
-          className="flex justify-between items-start mb-2 cursor-pointer" 
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
+        <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
           <h3 className="text-xl font-bold text-[#5A2E8A] pr-2 transition-colors">{course.title}</h3>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-[#5A2E8A] shrink-0 border border-purple-200">
             {course.category}
@@ -102,7 +98,6 @@ const CourseCard = ({ course }) => {
           <ChevronRight className={`h-4 w-4 ml-1 transition-transform duration-300 ${isExpanded ? '-rotate-90' : 'rotate-90'}`} />
         </button>
         
-        {/* 第二層上半部：詳細時間地點與講師 */}
         <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
           <div className="space-y-2 text-sm text-gray-600 bg-purple-50/50 p-4 rounded-xl border border-purple-100">
             <div className="flex items-center">
@@ -131,7 +126,6 @@ const CourseCard = ({ course }) => {
         </div>
       </div>
       
-      {/* 第二層下半部：操作連結 */}
       <div className={`bg-white transition-all duration-300 ease-in-out overflow-hidden border-t border-gray-100 ${isExpanded ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0 border-transparent'}`}>
         <div className="p-4 space-y-2">
           <div className="flex gap-2">
@@ -187,6 +181,7 @@ export default function App() {
   const [newAccountData, setNewAccountData] = useState({ username: '', password: '' });
   const [editingPasswordFor, setEditingPasswordFor] = useState(null);
   const [newPasswordValue, setNewPasswordValue] = useState('');
+  const [confirmOldPassword, setConfirmOldPassword] = useState(''); // 修改密碼驗證用
 
   // 表單狀態
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -290,12 +285,21 @@ export default function App() {
   };
   
   const handleChangePassword = async (username) => { 
-    if (!newPasswordValue.trim()) return alert('密碼不能為空'); 
+    if (!confirmOldPassword.trim() || !newPasswordValue.trim()) {
+      return alert('舊密碼與新密碼皆不能為空');
+    }
+
+    const targetAdmin = admins.find(a => a.username === username);
+    if (confirmOldPassword !== targetAdmin.password) {
+      return alert('舊密碼輸入錯誤，無法修改！');
+    }
+
     try { 
       await setDoc(doc(db, 'admins', username), { password: newPasswordValue }, { merge: true }); 
       setEditingPasswordFor(null); 
       setNewPasswordValue(''); 
-      alert('密碼修改成功'); 
+      setConfirmOldPassword('');
+      alert('密碼修改成功！'); 
     } catch (err) { alert('修改失敗'); } 
   };
   
@@ -359,11 +363,10 @@ export default function App() {
     }
   };
 
-  // --- CSV 匯出匯入功能 ---
   const handleExportCSV = () => {
     const headers = ['id', 'title', 'category', 'instructor', 'startTime', 'endTime', 'location', 'description', 'registrationLink', 'eventLink', 'capacity', 'contactLine', 'contactPhone'];
     const csvRows = [];
-    csvRows.push('\uFEFF' + headers.join(',')); // 加入 BOM
+    csvRows.push('\uFEFF' + headers.join(','));
 
     courses.forEach(course => {
       const row = headers.map(header => {
@@ -511,7 +514,6 @@ export default function App() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        
         {view === 'user' && (
           <div className="space-y-6">
             <div className="mb-8 relative bg-purple-50 p-6 sm:p-8 rounded-2xl border border-purple-100 overflow-hidden shadow-inner">
@@ -595,7 +597,6 @@ export default function App() {
               
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <input type="file" accept=".csv" ref={fileInputRef} onChange={handleImportCSV} className="hidden" />
-                
                 <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile} className="flex items-center justify-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium w-full sm:w-auto">
                   {isProcessingFile ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1 text-blue-600" />} 上傳 CSV
                 </button>
@@ -662,7 +663,6 @@ export default function App() {
         )}
       </main>
 
-      {/* 頁尾 Footer 宣告 */}
       <footer className="bg-[#2B1143] py-8 text-center text-purple-200 border-t border-[#1e0a30] mt-auto">
         <div className="flex justify-center items-center gap-2 mb-2">
           <Tent className="h-5 w-5 text-purple-300" />
@@ -673,17 +673,14 @@ export default function App() {
         </p>
       </footer>
 
-      {/* 表單 Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-6 sm:p-0">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsModalOpen(false)}></div>
-          
           <div className="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl w-full flex flex-col max-h-[90vh]">
             <div className="bg-white px-4 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
               <h3 className="text-xl font-bold text-[#5A2E8A]">{editingId ? '編輯營地課程' : '新增營地課程'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-500"><X className="h-6 w-6" /></button>
             </div>
-            
             <div className="px-4 py-5 sm:p-6 overflow-y-auto flex-1">
               <form id="course-form" onSubmit={handleFormSubmit} className="space-y-5">
                 <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 space-y-4">
@@ -760,7 +757,6 @@ export default function App() {
                 </div>
               </form>
             </div>
-            
             <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-end gap-3 shrink-0">
               <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">取消</button>
               <button type="submit" form="course-form" className="px-4 py-2 bg-[#5A2E8A] text-white rounded-lg hover:bg-[#401b69] font-medium shadow-sm">儲存至雲端</button>
@@ -769,7 +765,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 登入 Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setShowLoginModal(false)}></div>
@@ -790,7 +785,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 帳號設定 Modal */}
       {showAccountModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setShowAccountModal(false)}></div>
@@ -802,24 +796,55 @@ export default function App() {
                   <button onClick={() => setShowAccountModal(false)} className="text-gray-400 hover:text-gray-500"><X className="h-6 w-6" /></button>
                 </div>
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-500 uppercase mb-3">目前管理員列表 ({admins.length}/3)</h4>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase mb-3">目前管理員列表 ({currentAdmin === 'admin666' ? admins.length : 1}/3)</h4>
                   <ul className="space-y-3">
-                    {admins.map(admin => (
-                      <li key={admin.username} className="p-3 border rounded-lg bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div className="flex items-center"><User className="h-4 w-4 mr-2 text-gray-500" /><span className="font-medium text-gray-900">{admin.username}</span>{admin.isDefault && <span className="ml-2 px-2 py-0.5 text-[10px] bg-purple-100 text-[#5A2E8A] rounded font-medium border border-purple-200">預設帳號</span>}</div>
-                        <div className="flex items-center gap-2">
-                          {editingPasswordFor === admin.username ? (
-                            <div className="flex gap-2"><input type="text" placeholder="新密碼" value={newPasswordValue} onChange={(e) => setNewPasswordValue(e.target.value)} className="px-2 py-1 text-sm border rounded w-24 focus:ring-2 focus:ring-[#5A2E8A]" /><button onClick={() => handleChangePassword(admin.username)} className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">儲存</button><button onClick={() => setEditingPasswordFor(null)} className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400">取消</button></div>
-                          ) : (
-                            <><button onClick={() => { setEditingPasswordFor(admin.username); setNewPasswordValue(''); }} className="text-xs px-2 py-1 border border-purple-200 text-[#5A2E8A] bg-purple-50 rounded hover:bg-purple-100 font-medium">修改密碼</button>{!admin.isDefault && (<button onClick={() => handleDeleteAdmin(admin.username)} className="text-xs px-2 py-1 border border-red-200 text-red-700 bg-red-50 rounded flex items-center hover:bg-red-100 font-medium"><Trash2 className="h-3 w-3 mr-0.5" />刪除</button>)}</>
+                    {admins
+                      .filter(admin => currentAdmin === 'admin666' ? true : admin.username === currentAdmin)
+                      .map(admin => (
+                        <li key={admin.username} className="p-4 border rounded-lg bg-gray-50 flex flex-col gap-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              <User className="h-4 w-4 mr-2 text-gray-500" />
+                              <span className="font-bold text-gray-900">{admin.username}</span>
+                              {admin.isDefault && <span className="ml-2 px-2 py-0.5 text-[10px] bg-purple-100 text-[#5A2E8A] rounded font-medium border border-purple-200">預設帳號</span>}
+                            </div>
+                            <div className="flex gap-2">
+                              {editingPasswordFor !== admin.username && (
+                                <>
+                                  <button onClick={() => { setEditingPasswordFor(admin.username); setNewPasswordValue(''); setConfirmOldPassword(''); }} className="text-xs px-3 py-1.5 border border-purple-200 text-[#5A2E8A] bg-purple-50 rounded-lg hover:bg-purple-100 font-bold">
+                                    修改密碼
+                                  </button>
+                                  {currentAdmin === 'admin666' && !admin.isDefault && (
+                                    <button onClick={() => handleDeleteAdmin(admin.username)} className="text-xs px-3 py-1.5 border border-red-200 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 flex items-center">
+                                      <Trash2 className="h-3 w-3 mr-1" />刪除
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {editingPasswordFor === admin.username && (
+                            <div className="mt-2 p-3 bg-white rounded-lg border border-purple-100 space-y-3 shadow-inner">
+                              <div>
+                                <label className="text-xs text-gray-500 mb-1 block">請輸入原密碼進行驗證：</label>
+                                <input type="password" placeholder="原密碼" value={confirmOldPassword} onChange={(e) => setConfirmOldPassword(e.target.value)} className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 mb-1 block">設定新密碼：</label>
+                                <input type="password" placeholder="新密碼" value={newPasswordValue} onChange={(e) => setNewPasswordValue(e.target.value)} className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#5A2E8A] outline-none" />
+                              </div>
+                              <div className="flex gap-2 justify-end">
+                                <button onClick={() => handleChangePassword(admin.username)} className="px-4 py-1.5 bg-[#5A2E8A] text-white text-xs rounded-lg font-bold hover:bg-[#401b69]">確認修改</button>
+                                <button onClick={() => { setEditingPasswordFor(null); setConfirmOldPassword(''); }} className="px-4 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-lg hover:bg-gray-300">取消</button>
+                              </div>
+                            </div>
                           )}
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      ))}
                   </ul>
                 </div>
-                {admins.length < 3 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                {currentAdmin === 'admin666' && admins.length < 3 && (
+                  <div className="mt-6 pt-4 border-t border-gray-100">
                     <h4 className="text-sm font-medium text-gray-500 uppercase mb-3 flex items-center"><UserPlus className="h-4 w-4 mr-1" /> 新增管理帳號</h4>
                     <form onSubmit={handleAddAdmin} className="flex flex-col sm:flex-row gap-3">
                       <input type="text" required placeholder="自訂帳號" value={newAccountData.username} onChange={(e) => setNewAccountData({...newAccountData, username: e.target.value})} className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#5A2E8A]" />
